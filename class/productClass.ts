@@ -1,9 +1,9 @@
 import { Response, Request } from "express";
 import moment from "moment";
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 import { CallbackError } from "mongoose";
 import { nanoid } from "nanoid";
-
+import Server from "./server";
 // Modelo
 import productModel from "../models/productModel";
 
@@ -19,25 +19,23 @@ export class Product {
 
   // Crear producto
   nuevoProducto(req: any, resp: Response): any {
-    const idCreador: string = req.usuario._id;
-    const nombre: string = req.body.nombre;
-
-    const precio: number = Number(parseFloat(req.body.precio).toFixed(2));
-
-    const descripcion: string = req.body.descripcion;
-    // const sucursal: string = req.get('sucursal');
-    const fecha = moment().format("MMM Do YY");
+    const idCreador: any = new mongoose.Types.ObjectId(req.usuario._id);
     const categoria = new mongoose.Types.ObjectId(req.body.categoria);
+    const descripcion: string = req.body.observacion;
+    const nombre: string = req.body.nombre;
+    const precio: number = Number(parseFloat(req.body.precio).toFixed(2));
+    const fecha_alta = moment().format("DD-MM-YYYY");
+    const estado: boolean = req.body.estado;
 
     const nuevoProducto = new productModel({
       idReferencia: this.idRef,
-      idCreador: idCreador,
-      nombre: nombre,
-      precio: precio,
-      descripcion: descripcion,
-      // sucursal: sucursal,
-      categoria: categoria,
-      fecha_alta: fecha,
+      idCreador,
+      nombre,
+      precio,
+      descripcion,
+      categoria,
+      fecha_alta,
+      estado,
     });
 
     if (isNaN(precio)) {
@@ -56,6 +54,10 @@ export class Product {
           err,
         });
       } else {
+        const server = Server.instance;
+        server.io.emit("cargar-productos", {
+          ok: true,
+        });
         return resp.json({
           ok: true,
           mensaje: `Producto creado`,
@@ -68,17 +70,13 @@ export class Product {
   // Editar un producto
   editarProducto(req: any, res: Response): void {
     const id = req.get("id") || "";
-    // const estadoHeader: string = req.get('estado');
-    // const estado: boolean = castEstado(estadoHeader);
-    const estado = req.body.estado;
+    const estado: boolean = req.body.estado;
 
     const query = {
+      categoria: new mongoose.Types.ObjectId(req.body.categoria),
       nombre: req.body.nombre,
-      precio: req.body.precio,
-      descripcion: req.body.descripcion,
-      // sucursal: req.body.sucursal,
-      categoria: req.body.categoria,
-      ayuda: req.body.ayuda,
+      descripcion: req.body.observacion,
+      precio: Number(parseFloat(req.body.precio).toFixed(2)),
       estado: estado,
     };
 
@@ -109,44 +107,33 @@ export class Product {
         if (!query.descripcion) {
           query.descripcion = productoDB.descripcion;
         }
-        // if (!query.sucursal) {
-        //     query.sucursal = productoDB.sucursal;
-        // }
         if (!query.categoria) {
           query.categoria = productoDB.categoria;
-        }
-        if (!query.estado) {
-          query.estado = productoDB.estado;
-        }
-        if (!query.estado) {
-          query.estado = productoDB.estado;
         }
 
         productModel.findByIdAndUpdate(
           id,
           query,
           { new: true },
-          (err: CallbackError, productoDBActualizado: any) => {
+          (err: CallbackError, productoDB: any) => {
             if (err) {
               return res.json({
                 ok: false,
                 mensaje: `Error interno`,
                 err,
               });
-            }
+            } else {
+              const server = Server.instance;
+              server.io.emit("cargar-productos", {
+                ok: true,
+              });
 
-            if (!productoDBActualizado) {
               return res.json({
-                ok: false,
-                mensaje: `No se encontró un producto con ese ID en la base de datos`,
+                ok: true,
+                mensaje: `Producto actualizado`,
+                productoDB,
               });
             }
-
-            return res.json({
-              ok: true,
-              mensaje: `Producto actualizado`,
-              productoDBActualizado,
-            });
           }
         );
       }
@@ -184,120 +171,12 @@ export class Product {
       });
   }
 
-  // Obtener usuario por ID Referencia
-  obtenerProductoIDRef(req: Request, res: Response): void {
-    const idReferencia = req.get("idReferencia");
-
-    productModel.findOne(
-      { idReferencia: idReferencia },
-      (err: CallbackError, productoDB: Document) => {
-        if (err) {
-          return res.json({
-            ok: false,
-            mensaje: `Error al búscar producto o no existe`,
-            err,
-          });
-        }
-
-        if (!productoDB) {
-          return res.json({
-            ok: false,
-            mensaje: `No existe el producto en la base de datos`,
-          });
-        }
-
-        return res.json({
-          ok: true,
-          productoDB,
-        });
-      }
-    );
-  }
-
-  // Obtener productos por criterio nombre en busqueda
-  obtenerProductoCriterioNombre(req: any, res: Response): void {
-    // const estadoHeader: string = req.get('estado');
-    // const estado: boolean = castEstado(estadoHeader);
-
-    const criterio = req.get("criterio");
-    const regExpCrit = new RegExp(criterio, "i");
-    // /^[a-zA-ZáéíóúÁÉÍÓU]+$/
-
-    // , estado: true
-    productModel.find(
-      { nombre: regExpCrit },
-      (err: CallbackError, productosDB: Array<ProductModelInterface>) => {
-        //  estado: estado
-
-        if (err) {
-          return res.json({
-            ok: false,
-            mensaje: `Error interno`,
-            err,
-          });
-        }
-
-        if (!productosDB || productosDB.length === 0) {
-          return res.json({
-            ok: false,
-            mensaje: `No existen productos con ese criterio de búsqueda`,
-            productosDB,
-          });
-        }
-
-        return res.json({
-          ok: true,
-          productosDB,
-        });
-      }
-    );
-  }
-
-  // Obtener productos por criterio nombre en producto del pedido
-  obtenerProductoCriterioNombrePedido(req: any, res: Response): void {
-    // const estadoHeader: string = req.get('estado');
-    // const estado: boolean = castEstado(estadoHeader);
-
-    const criterio = req.get("criterio");
-    const regExpCrit = new RegExp(criterio, "i");
-    // /^[a-zA-ZáéíóúÁÉÍÓU]+$/
-
-    // , estado: true
-    productModel.find(
-      { nombre: regExpCrit, estado: true },
-      (err: CallbackError, productosDB: Array<ProductModelInterface>) => {
-        //  estado: estado
-
-        if (err) {
-          return res.json({
-            ok: false,
-            mensaje: `Error interno`,
-            err,
-          });
-        }
-
-        if (!productosDB || productosDB.length === 0) {
-          return res.json({
-            ok: false,
-            mensaje: `No existen productos con ese criterio de búsqueda`,
-            productosDB,
-          });
-        }
-
-        return res.json({
-          ok: true,
-          productosDB,
-        });
-      }
-    );
-  }
-
   // Obtener productos
   obtenerProductos(req: any, res: Response): void {
     productModel
       .find({})
-      // .populate('sucursal')
       .populate("categoria")
+      .populate("idCreador")
       .exec((err: any, productosDB: Array<any>) => {
         // estado: estado
 
@@ -309,54 +188,11 @@ export class Product {
           });
         }
 
-        // if (!productosDB || productosDB.length === 0) {
-
-        //     return res.json({
-        //         ok: false,
-        //         mensaje: `No existen productos con ese criterio de búsqueda`,
-        //         productosDB
-        //     })
-        // }
-
         return res.json({
           ok: true,
           productosDB,
         });
       });
-  }
-
-  // Obtener productos por sucursal
-  obtenerProductosSucursal(req: any, res: Response): void {
-    const estado: boolean = req.get("estado");
-    // const estado: boolean = castEstado(estadoHeader);
-
-    const sucursal = req.get("sucursal");
-
-    productModel.find(
-      { sucursal: sucursal, estado: estado },
-      (err: CallbackError, productosDB: Array<ProductModelInterface>) => {
-        if (err) {
-          return res.json({
-            ok: false,
-            mensaje: `Error interno`,
-            err,
-          });
-        }
-
-        if (!productosDB || productosDB.length === 0) {
-          return res.json({
-            ok: false,
-            mensaje: `No existen productos con ese criterio de búsqueda`,
-            productosDB,
-          });
-        }
-
-        return res.json({
-          ok: true,
-          productosDB,
-        });
-      }
-    );
   }
 
   // Eliminar un producto
@@ -366,38 +202,48 @@ export class Product {
     productModel.findByIdAndDelete(
       id,
       {},
-      (err: CallbackError, productoEliminadoDB: any) => {
+      (err: CallbackError, productoDB: any) => {
         if (err) {
           return res.json({
             ok: false,
             mensaje: "Erro interno",
             err,
           });
-        }
-
-        if (!productoEliminadoDB) {
+        } else {
+          const server = Server.instance;
+          server.io.emit("cargar-productos", {
+            ok: true,
+          });
           return res.json({
-            ok: false,
-            mensaje: `No se encontró producto con este ID`,
+            ok: true,
+            mensaje: `Producto eliminado`,
+            productoDB,
           });
         }
-
-        return res.json({
-          ok: true,
-          mensaje: `Producto eliminado`,
-          productoEliminadoDB,
-        });
       }
     );
   }
-}
 
-// Interfaz para manejar los datos del archivo idSucursal.json
-interface Archivo {
-  ids: Array<string>;
-}
+  obtenerProductoCriterio(req: Request, resp: Response): void {
+    const value: string = req.get("criterio") || "";
+    const criterio = new RegExp(value, "i");
 
-interface RespPromise {
-  ok: boolean;
-  data: string;
+    productModel.find(
+      { $or: [{ nombre: criterio }] },
+      (err: CallbackError, productosDB: Array<ProductModelInterface>) => {
+        if (err) {
+          return resp.json({
+            ok: false,
+            mensaje: "Error al obtener el producto",
+            err,
+          });
+        } else {
+          return resp.json({
+            ok: true,
+            productosDB,
+          });
+        }
+      }
+    );
+  }
 }

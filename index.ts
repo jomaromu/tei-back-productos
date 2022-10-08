@@ -1,11 +1,11 @@
-import mongoose from 'mongoose';
-import bodyParser from 'body-parser';
-import cors from 'cors';
-import fileUpload from 'express-fileupload';
-import Server from './class/server';
+import mongoose from "mongoose";
+import bodyParser from "body-parser";
+import cors from "cors";
+import fileUpload from "express-fileupload";
+import Server from "./class/server";
 
 // rutas
-import productRouter from './routes/productRoute';
+import productRouter from "./routes/productRoute";
 
 // const server = new Server();
 const server = Server.instance;
@@ -21,19 +21,23 @@ server.app.use(fileUpload());
 server.app.use(cors({ origin: true, credentials: true }));
 
 // modelos
-require('./models/sucursalModel');
-require('./models/categoriaModel');
+require("./models/categoriaModel");
+require("./models/workerModel");
 
 // conexion local
-mongoose.connect('mongodb://127.0.0.1:27017/todoImpresiones', { autoIndex: false }, (err) => {
+mongoose.connect(
+  "mongodb://127.0.0.1:27017/todoImpresiones",
+  { autoIndex: false },
+  (err) => {
     if (err) throw err;
-    console.log('Base de datos Online');
-});
+    console.log("Base de datos Online");
+  }
+);
 
 // usar las rutas
-server.app.use('/product', productRouter);
+server.app.use("/product", productRouter);
 
 // correr servidor
 server.start(() => {
-    console.log(`Servidor corriendo en el puerto: ${server.port}`);
+  console.log(`Servidor corriendo en el puerto: ${server.port}`);
 });

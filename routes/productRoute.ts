@@ -1,10 +1,5 @@
 import { Router, Request, Response } from "express";
-import {
-  crearUsuario,
-  editarUsuario,
-  eliminarUsuario,
-  verificaToken,
-} from "../auth/auth";
+import { verificaToken } from "../auth/auth";
 import { Product } from "../class/productClass";
 
 // instanciar el Router
@@ -15,7 +10,7 @@ const productRouter = Router();
 // ==================================================================== //
 productRouter.post(
   "/nuevoProducto",
-  [verificaToken, crearUsuario],
+  [verificaToken],
   (req: Request, resp: Response) => {
     const nuevoProducto = new Product();
     nuevoProducto.nuevoProducto(req, resp);
@@ -27,7 +22,7 @@ productRouter.post(
 // ==================================================================== //
 productRouter.put(
   "/editarProducto",
-  [verificaToken, editarUsuario],
+  [verificaToken],
   (req: Request, resp: Response) => {
     const editarProducto = new Product();
     editarProducto.editarProducto(req, resp);
@@ -47,45 +42,6 @@ productRouter.get(
 );
 
 // ==================================================================== //
-// Obtener un producto por ID Referencia
-// ==================================================================== //
-productRouter.get(
-  "/obtenerProductoIDRef",
-  [verificaToken],
-  (req: Request, resp: Response) => {
-    const obtenerProductoIDRef = new Product();
-    obtenerProductoIDRef.obtenerProductoIDRef(req, resp);
-  }
-);
-
-// ==================================================================== //
-// Obtener un productos por criterio nombre
-// ==================================================================== //
-productRouter.get(
-  "/obtenerProductoCriterioNombre",
-  [verificaToken],
-  (req: Request, resp: Response) => {
-    const obtenerProductoCriterioNombre = new Product();
-    obtenerProductoCriterioNombre.obtenerProductoCriterioNombre(req, resp);
-  }
-);
-
-// ==================================================================== //
-// Obtener un productos por criterio nombre en producto del pedido
-// ==================================================================== //
-productRouter.get(
-  "/obtenerProductoCriterioNombrePedido",
-  [verificaToken],
-  (req: Request, resp: Response) => {
-    const obtenerProductoCriterioNombrePedido = new Product();
-    obtenerProductoCriterioNombrePedido.obtenerProductoCriterioNombrePedido(
-      req,
-      resp
-    );
-  }
-);
-
-// ==================================================================== //
 // Obtener todos los productos
 // ==================================================================== //
 productRouter.get(
@@ -98,26 +54,26 @@ productRouter.get(
 );
 
 // ==================================================================== //
-// Obtener un productos por sucursal
-// ==================================================================== //
-productRouter.get(
-  "/obtenerProductosSucursal",
-  [verificaToken],
-  (req: Request, resp: Response) => {
-    const obtenerProductosSucursal = new Product();
-    obtenerProductosSucursal.obtenerProductosSucursal(req, resp);
-  }
-);
-
-// ==================================================================== //
 // Eliminar un producto
 // ==================================================================== //
 productRouter.delete(
   "/eliminarProducto",
-  [verificaToken, eliminarUsuario],
+  [verificaToken],
   (req: Request, resp: Response) => {
     const eliminarProducto = new Product();
     eliminarProducto.eliminarProducto(req, resp);
+  }
+);
+
+// ==================================================================== //
+// Obtener por criterio
+// ==================================================================== //
+productRouter.get(
+  "/obtenerProductoCriterio",
+  [verificaToken],
+  (req: Request, resp: Response) => {
+    const obtenerProductoCriterio = new Product();
+    obtenerProductoCriterio.obtenerProductoCriterio(req, resp);
   }
 );
 

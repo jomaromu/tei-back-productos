@@ -5,9 +5,6 @@ export interface ProductModelInterface {
     nombre: string;
     precio: number;
     descripcion: string;
-    seguimiento_disenio: string;
-    seguimiento_produccion: string;
-    sucursal: string;
     categoria: string;
     fecha_alta: string;
     estado: boolean;
