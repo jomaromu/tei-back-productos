@@ -17,6 +17,7 @@ class Product {
     // Crear producto
     nuevoProducto(req, resp) {
         const idCreador = new mongoose.Types.ObjectId(req.usuario._id);
+        const foranea = new mongoose.Types.ObjectId(req.body.foranea);
         const categoria = new mongoose.Types.ObjectId(req.body.categoria);
         const descripcion = req.body.observacion;
         const nombre = req.body.nombre;
@@ -26,6 +27,7 @@ class Product {
         const nuevoProducto = new productModel_1.default({
             idReferencia: this.idRef,
             idCreador,
+            foranea,
             nombre,
             precio,
             descripcion,
@@ -63,7 +65,8 @@ class Product {
     }
     // Editar un producto
     editarProducto(req, res) {
-        const id = req.get("id") || "";
+        const _id = new mongoose.Types.ObjectId(req.get("id"));
+        const foranea = new mongoose.Types.ObjectId(req.body.foranea);
         const estado = req.body.estado;
         const query = {
             categoria: new mongoose.Types.ObjectId(req.body.categoria),
@@ -72,7 +75,7 @@ class Product {
             precio: Number(parseFloat(req.body.precio).toFixed(2)),
             estado: estado,
         };
-        productModel_1.default.findById(id, (err, productoDB) => {
+        productModel_1.default.findOne({ _id, foranea }, (err, productoDB) => {
             if (err) {
                 return res.json({
                     ok: false,
@@ -98,7 +101,7 @@ class Product {
             if (!query.categoria) {
                 query.categoria = productoDB.categoria;
             }
-            productModel_1.default.findByIdAndUpdate(id, query, { new: true }, (err, productoDB) => {
+            productModel_1.default.findOneAndUpdate({ _id, foranea }, query, { new: true }, (err, productoDB) => {
                 if (err) {
                     return res.json({
                         ok: false,
@@ -122,9 +125,10 @@ class Product {
     }
     // Obtener producto por ID
     obtenerProductoID(req, res) {
-        const id = req.get("id") || "";
+        const _id = new mongoose.Types.ObjectId(req.get("id"));
+        const foranea = new mongoose.Types.ObjectId(req.get("foranea"));
         productModel_1.default
-            .findById(id)
+            .findOne({ _id, foranea })
             // .populate('sucursal')
             .populate("categoria")
             .exec((err, productoDB) => {
@@ -149,8 +153,9 @@ class Product {
     }
     // Obtener productos
     obtenerProductos(req, res) {
+        const foranea = new mongoose.Types.ObjectId(req.get("foranea"));
         productModel_1.default
-            .find({})
+            .find({ foranea })
             .populate("categoria")
             .populate("idCreador")
             .exec((err, productosDB) => {
@@ -170,8 +175,9 @@ class Product {
     }
     // Eliminar un producto
     eliminarProducto(req, res) {
-        const id = req.get("id") || "";
-        productModel_1.default.findByIdAndDelete(id, {}, (err, productoDB) => {
+        const _id = new mongoose.Types.ObjectId(req.get("id"));
+        const foranea = new mongoose.Types.ObjectId(req.get("foranea"));
+        productModel_1.default.findOneAndUpdate({ _id, foranea }, {}, (err, productoDB) => {
             if (err) {
                 return res.json({
                     ok: false,
@@ -195,7 +201,8 @@ class Product {
     obtenerProductoCriterio(req, resp) {
         const value = req.get("criterio") || "";
         const criterio = new RegExp(value, "i");
-        productModel_1.default.find({ $or: [{ nombre: criterio }] }, (err, productosDB) => {
+        const foranea = new mongoose.Types.ObjectId(req.get("foranea"));
+        productModel_1.default.find({ $and: [{ $or: [{ nombre: criterio }] }, { foranea }] }, (err, productosDB) => {
             if (err) {
                 return resp.json({
                     ok: false,

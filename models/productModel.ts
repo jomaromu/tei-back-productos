@@ -11,13 +11,11 @@ const productSchema = new Schema({
   idReferencia: {
     type: String,
     required: [true, `Es necesario un ID referencia`],
-    unique: true,
   },
   idCreador: { type: Schema.Types.ObjectId, ref: "userWorker" },
   nombre: {
     type: String,
     required: [true, "Debe ingresar un nombre"],
-    unique: true,
   },
   precio: { type: Number, required: [true, "Debe ingresar un precio"] },
   descripcion: { type: String },
@@ -28,6 +26,7 @@ const productSchema = new Schema({
     required: [true, "Categoría es necesaria"],
   },
   estado: { type: Boolean, default: true },
+  foranea: { type: Schema.Types.ObjectId, ref: "userWorker" },
 });
 
 // validacion para único elemento

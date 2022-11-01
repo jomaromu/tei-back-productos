@@ -7,10 +7,14 @@ const mongoose_unique_validator_1 = __importDefault(require("mongoose-unique-val
 // crear esquema
 const Schema = mongoose_1.default.Schema;
 const categoriaSchema = new Schema({
-    idCreador: { type: String },
-    nombre: { type: String, required: [true, 'Debe ingresar un nombre'], unique: true },
+    idCreador: { type: Schema.Types.ObjectId, ref: "userWorker" },
+    nombre: {
+        type: String,
+        required: [true, "Debe ingresar un nombre"],
+    },
     estado: { type: Boolean, default: true },
+    foranea: { type: Schema.Types.ObjectId, ref: "userWorker" },
 });
 // validacion para único elemento
-categoriaSchema.plugin(mongoose_unique_validator_1.default, { message: '{PATH}, ya existe!!' });
-module.exports = mongoose_1.default.model('categoria', categoriaSchema);
+categoriaSchema.plugin(mongoose_unique_validator_1.default, { message: "{PATH}, ya existe!!" });
+module.exports = mongoose_1.default.model("categoria", categoriaSchema);

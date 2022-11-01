@@ -20,6 +20,7 @@ export class Product {
   // Crear producto
   nuevoProducto(req: any, resp: Response): any {
     const idCreador: any = new mongoose.Types.ObjectId(req.usuario._id);
+    const foranea: any = new mongoose.Types.ObjectId(req.body.foranea);
     const categoria = new mongoose.Types.ObjectId(req.body.categoria);
     const descripcion: string = req.body.observacion;
     const nombre: string = req.body.nombre;
@@ -30,6 +31,7 @@ export class Product {
     const nuevoProducto = new productModel({
       idReferencia: this.idRef,
       idCreador,
+      foranea,
       nombre,
       precio,
       descripcion,
@@ -69,7 +71,8 @@ export class Product {
 
   // Editar un producto
   editarProducto(req: any, res: Response): void {
-    const id = req.get("id") || "";
+    const _id = new mongoose.Types.ObjectId(req.get("id"));
+    const foranea = new mongoose.Types.ObjectId(req.body.foranea);
     const estado: boolean = req.body.estado;
 
     const query = {
@@ -80,8 +83,8 @@ export class Product {
       estado: estado,
     };
 
-    productModel.findById(
-      id,
+    productModel.findOne(
+      { _id, foranea },
       (err: CallbackError, productoDB: ProductModelInterface) => {
         if (err) {
           return res.json({
@@ -111,8 +114,8 @@ export class Product {
           query.categoria = productoDB.categoria;
         }
 
-        productModel.findByIdAndUpdate(
-          id,
+        productModel.findOneAndUpdate(
+          { _id, foranea },
           query,
           { new: true },
           (err: CallbackError, productoDB: any) => {
@@ -142,10 +145,11 @@ export class Product {
 
   // Obtener producto por ID
   obtenerProductoID(req: Request, res: Response): void {
-    const id = req.get("id") || "";
+    const _id = new mongoose.Types.ObjectId(req.get("id"));
+    const foranea = new mongoose.Types.ObjectId(req.get("foranea"));
 
     productModel
-      .findById(id)
+      .findOne({ _id, foranea })
       // .populate('sucursal')
       .populate("categoria")
       .exec((err: any, productoDB: any) => {
@@ -173,8 +177,10 @@ export class Product {
 
   // Obtener productos
   obtenerProductos(req: any, res: Response): void {
+    const foranea = new mongoose.Types.ObjectId(req.get("foranea"));
+
     productModel
-      .find({})
+      .find({ foranea })
       .populate("categoria")
       .populate("idCreador")
       .exec((err: any, productosDB: Array<any>) => {
@@ -197,10 +203,11 @@ export class Product {
 
   // Eliminar un producto
   eliminarProducto(req: Request, res: Response): void {
-    const id = req.get("id") || "";
+    const _id = new mongoose.Types.ObjectId(req.get("id"));
+    const foranea = new mongoose.Types.ObjectId(req.get("foranea"));
 
-    productModel.findByIdAndDelete(
-      id,
+    productModel.findOneAndUpdate(
+      { _id, foranea },
       {},
       (err: CallbackError, productoDB: any) => {
         if (err) {
@@ -227,9 +234,10 @@ export class Product {
   obtenerProductoCriterio(req: Request, resp: Response): void {
     const value: string = req.get("criterio") || "";
     const criterio = new RegExp(value, "i");
+    const foranea = new mongoose.Types.ObjectId(req.get("foranea"));
 
     productModel.find(
-      { $or: [{ nombre: criterio }] },
+      { $and: [{ $or: [{ nombre: criterio }] }, { foranea }] },
       (err: CallbackError, productosDB: Array<ProductModelInterface>) => {
         if (err) {
           return resp.json({
